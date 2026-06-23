@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Statement Parser & Reconciler</title>
+    <!-- Modern Typography from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="glass-bg"></div>
+    
+    <div class="app-container">
+        <!-- Sidebar Dashboard -->
+        <header class="header">
+            <div class="logo">
+                <i class="fa-solid fa-file-invoice-dollar logo-icon"></i>
+                <div class="logo-text">
+                    <h1>FinParse</h1>
+                    <span>Reconciliation Engine</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <span class="version-badge">v1.2.0</span>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <main class="main-content">
+            <!-- Upload and Info Section -->
+            <section class="upload-section">
+                <div class="glass-card upload-card">
+                    <h2><i class="fa-solid fa-cloud-arrow-up"></i> Ingest Statement</h2>
+                    <p class="section-desc">Drop your messy bank PDF or CSV statement here. Our layout engine will parse and align the transaction grids automatically.</p>
+                    
+                    <div id="drop-zone" class="drop-zone">
+                        <input type="file" id="file-input" accept=".pdf,.csv,.xlsx" style="display: none;">
+                        <i class="fa-solid fa-file-pdf file-icon" id="drop-icon"></i>
+                        <p id="drop-text">Drag & drop your statement here, or <span>browse files</span></p>
+                        <p class="file-limits">Supports PDF, CSV, and XLSX statements up to 25MB</p>
+                    </div>
+
+                    <div id="file-info-container" class="file-info-container" style="display: none;">
+                        <div class="file-details">
+                            <i class="fa-solid fa-file-excel file-details-icon"></i>
+                            <div class="file-metadata">
+                                <span id="file-name">statement.pdf</span>
+                                <span id="file-size">1.2 MB</span>
+                            </div>
+                        </div>
+                        <button id="cancel-file-btn" class="icon-btn" title="Remove file"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                </div>
+
+                <!-- Info Card -->
+                <div class="glass-card instructions-card">
+                    <h2><i class="fa-solid fa-shield-halved"></i> Extraction System</h2>
+                    <ul class="features-list">
+                        <li>
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <div>
+                                <strong>Coordinate Alignment</strong>
+                                <p>Extracts words and fits them into column bounding boxes, fixing shifted data.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-calculator"></i>
+                            <div>
+                                <strong>Mathematical Reconciliation</strong>
+                                <p>Checks <code>Previous Bal - Debit + Credit = Balance</code> on each row. Highlights gaps.</p>
+                            </div>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-file-excel"></i>
+                            <div>
+                                <strong>Styled Excel Export</strong>
+                                <p>Outputs formatted currency values, auto-fitting widths, and generating a summary dashboard sheet.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Loading overlay inside content -->
+            <div id="loading-container" class="loading-container" style="display: none;">
+                <div class="spinner"></div>
+                <p>Analyzing statement layout and computing reconciliation balance sheets...</p>
+            </div>
+
+            <!-- Dashboard KPIs -->
+            <section id="kpi-section" class="kpi-section" style="display: none;">
+                <div class="kpi-card" id="kpi-starting">
+                    <span class="kpi-label">Starting Balance</span>
+                    <span class="kpi-val">$0.00</span>
+                    <i class="fa-solid fa-wallet kpi-icon"></i>
+                </div>
+                <div class="kpi-card" id="kpi-credits">
+                    <span class="kpi-label">Total Deposits (Credits)</span>
+                    <span class="kpi-val credit-color">$0.00</span>
+                    <i class="fa-solid fa-circle-arrow-down kpi-icon credit-color"></i>
+                </div>
+                <div class="kpi-card" id="kpi-debits">
+                    <span class="kpi-label">Total Withdrawals (Debits)</span>
+                    <span class="kpi-val debit-color">$0.00</span>
+                    <i class="fa-solid fa-circle-arrow-up kpi-icon debit-color"></i>
+                </div>
+                <div class="kpi-card" id="kpi-net">
+                    <span class="kpi-label">Net Cash Flow</span>
+                    <span class="kpi-val">$0.00</span>
+                    <i class="fa-solid fa-arrow-right-arrow-left kpi-icon"></i>
+                </div>
+                <div class="kpi-card" id="kpi-ending">
+                    <span class="kpi-label">Ending Balance</span>
+                    <span class="kpi-val">$0.00</span>
+                    <i class="fa-solid fa-scale-balanced kpi-icon"></i>
+                </div>
+                <div class="kpi-card status-card" id="kpi-status">
+                    <span class="kpi-label">Status</span>
+                    <span class="kpi-val status-text">OK</span>
+                    <i class="fa-solid fa-check-circle kpi-icon status-icon"></i>
+                </div>
+            </section>
+
+            <!-- Main Interactive Data Table Area -->
+            <section id="data-section" class="data-section" style="display: none;">
+                <div class="glass-card table-card">
+                    <div class="table-header-toolbar">
+                        <div class="toolbar-title">
+                            <h2><i class="fa-solid fa-list-check"></i> Aligned Transactions</h2>
+                            <span id="reconciled-message" class="reconciled-status-pill">
+                                Reconciled & Verified
+                            </span>
+                        </div>
+                        <div class="toolbar-actions">
+                            <button id="add-row-btn" class="btn secondary"><i class="fa-solid fa-plus"></i> Add Transaction</button>
+                            <button id="reconcile-btn" class="btn secondary"><i class="fa-solid fa-rotate"></i> Re-Calculate Math</button>
+                            <button id="export-btn" class="btn primary"><i class="fa-solid fa-file-export"></i> Export to Excel</button>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning" id="discrepancy-warning" style="display: none;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span>Reconciliation checks flagged <strong><span id="error-count">0</span> matching issues</strong>. Edit descriptions or amount entries directly below to reconcile.</span>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table id="transactions-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 120px;">Date</th>
+                                    <th>Description</th>
+                                    <th style="width: 160px;">Category</th>
+                                    <th style="width: 130px;">Debits (Out)</th>
+                                    <th style="width: 130px;">Credits (In)</th>
+                                    <th style="width: 140px;">Statement Balance</th>
+                                    <th style="width: 140px;">Expected Balance</th>
+                                    <th style="width: 120px;">Discrepancy</th>
+                                    <th style="width: 100px;">Status</th>
+                                    <th style="width: 60px;">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="table-body">
+                                <!-- Generated Dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Secondary Tables Details -->
+                <div class="dashboard-grid">
+                    <!-- Category Breakdown -->
+                    <div class="glass-card category-card">
+                        <h2><i class="fa-solid fa-chart-pie"></i> Category Summaries</h2>
+                        <p class="section-desc">Automatic transaction classifications and cumulative metrics.</p>
+                        <div class="category-list" id="category-list">
+                            <!-- Generated Dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Logs/Tips Panel -->
+                    <div class="glass-card instructions-card">
+                        <h2><i class="fa-solid fa-lightbulb"></i> Editor Tips</h2>
+                        <ul class="tips-list">
+                            <li><i class="fa-solid fa-circle-info"></i> Click directly inside any text cells of Date, Description, Debits, Credits, or Statement Balance to edit.</li>
+                            <li><i class="fa-solid fa-circle-info"></i> Standardize date strings to <strong>YYYY-MM-DD</strong>. Numbers are auto-parsed when clicking "Re-Calculate".</li>
+                            <li><i class="fa-solid fa-circle-info"></i> Delete incorrect, phantom, or metadata rows by clicking the trash icon <i class="fa-solid fa-trash-can" style="color:var(--danger)"></i> at the end of each row.</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
